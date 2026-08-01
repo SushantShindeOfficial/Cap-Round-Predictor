@@ -1,0 +1,121 @@
+02137 - Nagnathappa Halge Engineering  College, Parli, Beed
+Un-Aided  
+CAP Seats:90
+Choice Code
+Course Name
+SI
+MS Seats
+Minority Seats
+All India
+Institute Seats
+Orphan
+0213719110
+Civil Engineering
+90
+76
+0
+14
+0
+1
+Category
+OPEN
+SC
+ST
+VJ/DT
+NTB
+NTC
+NTD
+OBC
+SEBC
+Total
+General / Ladies
+G
+L
+G
+L
+G
+L
+G
+L
+G
+L
+G
+L
+G
+L
+G
+L
+G
+L
+G + L
+HU
+13
+6
+3
+2
+3
+1
+1
+1
+0
+0
+2
+1
+1
+0
+6
+3
+4
+2
+49
+OHU
+5
+2
+2
+0
+2
+0
+1
+0
+1
+0
+0
+0
+0
+0
+2
+1
+2
+0
+18
+PWD
+2
+1
+0
+0
+0
+0
+0
+        1
+0
+4
+PWD Common Reserved Seats : 0
+DEF
+2
+1
+0
+0
+0
+0
+0
+      1
+0
+4
+DEF Common Reserved Seats : 0
+Economically Weaker Section (EWS) Seats: 9
+Tution Fee Waiver Scheme Choice Code:  :                    Seats: 0
+F:Only For Female, K:Konkan Seats, L:Regional Language, HU:Home University, OHU:Other than Home University,Common Reserved:Combined Common for All Reserved 
+Categories
+State CET Cell, Maharashtra State
+779 of 2181
+Page

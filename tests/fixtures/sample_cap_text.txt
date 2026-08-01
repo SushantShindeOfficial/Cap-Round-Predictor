@@ -1,0 +1,36 @@
+01002 - Government College of Engineering, Amravati
+0100224210 - Computer Science and Engineering
+Status: Government Autonomous Home University : Autonomous Institute
+State Level
+GOPENS
+GSCS
+LOPENS
+TFWS
+EWS
+I
+7872
+(97.3911937)
+17571
+(94.1713006)
+9308
+(96.9066937)
+5518
+(98.1177725)
+13851
+(95.3932298)
+Stage
+01005 - Sant Gadge Baba Amravati University,Amravati
+0100550310 - Food Technology
+Status: University Department Home University : Sant Gadge Baba Amravati University
+Home University Seats Allotted to Home University Candidates
+GOPENH
+GOBCH
+LOPENH
+I
+29972
+(90.6223114)
+38311
+(87.9283936)
+22742
+(92.9308861)
+Stage

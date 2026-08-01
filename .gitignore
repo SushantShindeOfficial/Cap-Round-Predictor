@@ -1,0 +1,47 @@
+# Virtual env / Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# Tests / IDE
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.idea/
+.vscode/
+*.swp
+
+# Secrets / local env
+.env
+.env.*
+!.env.example
+
+# Generated outputs
+outputs/
+*.log
+
+# Heavy processed caches (regenerate via parse / parse-seat-matrix)
+data/processed/*.parquet
+data/processed/*.duckdb
+data/processed/*.duckdb.wal
+data/processed/models/
+data/processed/*.meta.json
+data/processed/parser_validation.json
+
+# Large CAP PDFs (keep locally under Knowledge Base/; not for GitHub)
+Knowledge Base/**/*.pdf
+*.pdf
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

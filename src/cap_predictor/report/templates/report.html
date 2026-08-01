@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Maharashtra CAP Prediction Report</title>
+  <style>
+    :root {
+      --ink: #1a2332;
+      --muted: #5a6577;
+      --line: #d7dde8;
+      --safe: #1f7a4d;
+      --target: #b36b00;
+      --dream: #2c5aa0;
+      --bg: #f7f9fc;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.45;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 28px 20px 48px; }
+    header.hero {
+      background: linear-gradient(135deg, #10243f 0%, #1e4d7b 55%, #2f6ea3 100%);
+      color: #fff;
+      border-radius: 14px;
+      padding: 28px 28px 24px;
+      margin-bottom: 22px;
+    }
+    header.hero h1 { margin: 0 0 6px; font-size: 1.55rem; font-weight: 650; }
+    header.hero p { margin: 0; opacity: 0.9; font-size: 0.95rem; }
+    .meta { margin-top: 14px; font-size: 0.85rem; opacity: 0.85; }
+    section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 1.1rem;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 8px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.02em; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #fff;
+    }
+    .badge.safe { background: var(--safe); }
+    .badge.target { background: var(--target); }
+    .badge.dream { background: var(--dream); }
+    .badge.unlikely { background: #6b7280; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px; }
+    .kv { font-size: 0.92rem; }
+    .kv span { color: var(--muted); display: block; font-size: 0.75rem; }
+    .narrative { white-space: pre-wrap; font-size: 0.92rem; }
+    .notes { color: var(--muted); font-size: 0.85rem; }
+    footer { margin-top: 8px; color: var(--muted); font-size: 0.78rem; text-align: center; }
+    @media print {
+      body { background: #fff; }
+      .wrap { max-width: none; padding: 0; }
+      section, header.hero { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1>Maharashtra CAP Admission Prediction Report</h1>
+      <p>Rule-based chances from parsed CAP cutoff PDFs. LLM text is grounded on extracted facts only.</p>
+      <div class="meta">
+        Data years: {{ result.data_years | join(', ') or 'n/a' }}
+        · Matched cutoff rows: {{ result.matched_cutoff_rows }}
+        · Generated: {{ generated_at }}
+      </div>
+      <p style="margin:12px 0 0;font-size:0.85rem;opacity:0.95;">
+        Disclaimer: Predictions are historical closing-percentile comparisons only — not admission guarantees.
+        Cutoffs change by round, category, and year.
+      </p>
+    </header>
+
+    <section>
+      <h2>Student Profile</h2>
+      <div class="grid">
+        <div class="kv"><span>Percentile</span>{{ profile.percentile }}</div>
+        <div class="kv"><span>Category</span>{{ profile.category }}</div>
+        <div class="kv"><span>Gender</span>{{ profile.gender }}</div>
+        <div class="kv"><span>Home University</span>{{ profile.home_university }}</div>
+        <div class="kv"><span>Seat Type</span>{{ profile.seat_type }}</div>
+        <div class="kv"><span>Target Branch</span>{{ profile.target_branch }}</div>
+        <div class="kv"><span>Year filter</span>{{ profile.year if profile.year is not none else 'All' }}</div>
+        <div class="kv"><span>Round filter</span>{{ profile.round if profile.round is not none else 'All' }}</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>What Safe / Target / Dream mean</h2>
+      <p class="notes">Margin = student percentile − closing percentile. Historical comparison only — not an admission guarantee.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Band</th>
+            <th>Meaning</th>
+            <th>Rule</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in band_meanings %}
+          <tr>
+            <td><span class="badge {{ b.band|lower }}">{{ b.band }}</span></td>
+            <td>{{ b.meaning }}</td>
+            <td>{{ b.rule }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>Summary Counts</h2>
+      <div class="grid">
+        <div class="kv"><span>Eligible (excl. unlikely)</span>{{ result.eligible | length }}</div>
+        <div class="kv"><span>Safe</span>{{ result.safe | length }}</div>
+        <div class="kv"><span>Target</span>{{ result.target | length }}</div>
+        <div class="kv"><span>Dream</span>{{ result.dream | length }}</div>
+      </div>
+    </section>
+
+    {% macro college_table(title, rows) -%}
+    <section>
+      <h2>{{ title }}</h2>
+      {% if rows %}
+      <table>
+        <thead>
+          <tr>
+            <th>Institute</th>
+            <th>Branch</th>
+            <th>Band</th>
+            <th>Chance</th>
+            <th>Confidence</th>
+            <th>Margin</th>
+            <th>Student %</th>
+            <th>Closing</th>
+            <th>Seats</th>
+            <th>Competition</th>
+            <th>Conf%</th>
+            <th>Evidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in rows %}
+          <tr>
+            <td>{{ c.institute_code }} — {{ c.institute_name }}</td>
+            <td>{{ c.branch_name }}<br><small>{{ c.branch_code }}</small></td>
+            <td><span class="badge {{ c.band.value }}">{{ c.band.value }}</span></td>
+            <td>{{ c.chance_label.value }}</td>
+            <td>{{ c.evidence_confidence }}</td>
+            <td>{{ '%+.2f'|format(c.margin) }}</td>
+            <td>{{ '%.2f'|format(result.profile.percentile) }}</td>
+            <td>{{ '%.4f'|format(c.primary_closing_percentile) }} ({{ c.primary_year }} R{{ c.primary_round }} {{ c.primary_category_code }})</td>
+            <td>{{ c.available_seats if c.available_seats is not none else '—' }}</td>
+            <td>{{ c.competition or '—' }}</td>
+            <td>{{ c.confidence_pct if c.confidence_pct is not none else '—' }}</td>
+            <td><small>{{ c.rule_reason }}</small></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="notes">No colleges in this band for the current filters.</p>
+      {% endif %}
+    </section>
+    {%- endmacro %}
+
+    {{ college_table('Safe Colleges', result.safe[:25]) }}
+    {{ college_table('Target Colleges', result.target[:25]) }}
+    {{ college_table('Dream Colleges', result.dream[:25]) }}
+
+    <section>
+      <h2>Suggested Preference Order</h2>
+      {% if result.preference_order %}
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Institute</th>
+            <th>Branch</th>
+            <th>Band</th>
+            <th>Student %</th>
+            <th>Closing %</th>
+            <th>Margin</th>
+            <th>Seats</th>
+            <th>Score</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in result.preference_order[:40] %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ c.institute_code }} — {{ c.institute_name }}</td>
+            <td>{{ c.branch_name }}</td>
+            <td><span class="badge {{ c.band.value }}">{{ c.band.value }}</span></td>
+            <td>{{ '%.2f'|format(result.profile.percentile) }}</td>
+            <td>{{ '%.4f'|format(c.primary_closing_percentile) }}</td>
+            <td>{{ '%+.2f'|format(c.margin) }}</td>
+            <td>{{ c.available_seats if c.available_seats is not none else '—' }}</td>
+            <td>{{ '%.3f'|format(c.final_score) if c.final_score is not none else '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="notes">No preference list generated.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Closing Trend (top preferences)</h2>
+      <p class="notes">Closing percentile by year and CAP round for the same institute–branch (from filtered evidence).</p>
+      {% set ns = namespace(has_trend=false) %}
+      {% for c in result.preference_order[:12] if c.closing_trend %}
+        {% set ns.has_trend = true %}
+        <p><strong>{{ c.institute_code }} — {{ c.institute_name }}</strong> / {{ c.branch_name }}</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Year</th>
+              <th>Round</th>
+              <th>Category</th>
+              <th>Closing %</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in c.closing_trend %}
+            <tr>
+              <td>{{ t.year }}</td>
+              <td>R{{ t.round }}</td>
+              <td>{{ t.category_code }}</td>
+              <td>{{ '%.4f'|format(t.closing_percentile) }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endfor %}
+      {% if not ns.has_trend %}
+      <p class="notes">No closing trend points available for the current filters.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Cutoff Evidence (sample)</h2>
+      {% set evid_rows = evidence_rows(result) %}
+      {% if evid_rows %}
+      <table>
+        <thead>
+          <tr>
+            <th>Institute</th>
+            <th>Year</th>
+            <th>Category</th>
+            <th>Stage</th>
+            <th>Merit</th>
+            <th>Percentile</th>
+            <th>Seat section</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in evid_rows %}
+          <tr>
+            <td>{{ e.institute }}</td>
+            <td>{{ e.year }} R{{ e.round }}</td>
+            <td>{{ e.category_code }}</td>
+            <td>{{ e.stage }}</td>
+            <td>{{ e.closing_merit if e.closing_merit is not none else '—' }}</td>
+            <td>{{ '%.7f'|format(e.closing_percentile) if e.closing_percentile is not none else '—' }}</td>
+            <td>{{ e.seat_type_section }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="notes">No evidence rows.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Seat / Category Summary (matched rows)</h2>
+      {% if result.seat_summary %}
+      <table>
+        <thead>
+          <tr>
+            <th>Seat type section</th>
+            <th>Category</th>
+            <th>Row count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in result.seat_summary[:40] %}
+          <tr>
+            <td>{{ s.seat_type_section }}</td>
+            <td>{{ s.category_code }}</td>
+            <td>{{ s.row_count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="notes">No seat summary.</p>
+      {% endif %}
+      <p class="notes">Cutoff bands drive predictions. Seat counts (when shown) come from the CAP Round I seat matrix PDF for the matched institute/branch/quota cell — not invented by the LLM.</p>
+    </section>
+
+    <section>
+      <h2>Counselling Recommendations</h2>
+      <div class="narrative">{{ result.narrative or 'No narrative generated.' }}</div>
+    </section>
+
+    {% if result.notes %}
+    <section>
+      <h2>Pipeline Notes</h2>
+      <ul class="notes">
+        {% for n in result.notes %}
+        <li>{{ n }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <section>
+      <h2>Evidence confidence guide</h2>
+      <ul class="notes">
+        <li><strong>high</strong> — closing points across multiple years</li>
+        <li><strong>medium</strong> — multiple CAP rounds in the same year</li>
+        <li><strong>low</strong> — single year + round evidence point</li>
+      </ul>
+    </section>
+
+    <footer>
+      Generated offline by Normal Cap Predictor · Historical comparison only · Not an admission guarantee.
+    </footer>
+  </div>
+</body>
+</html>

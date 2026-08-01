@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cap-predictor"
+version = "0.1.0"
+description = "Maharashtra CAP Round Prediction Report Generator"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pymupdf>=1.24.0",
+  "pandas>=2.0.0",
+  "pyarrow>=14.0.0",
+  "pydantic>=2.0.0",
+  "jinja2>=3.1.0",
+  "httpx>=0.27.0",
+  "streamlit>=1.32.0",
+  "weasyprint>=62.0",
+  "rapidfuzz>=3.0.0",
+  "python-dotenv>=1.0.0",
+  "openpyxl>=3.1.0",
+  "duckdb>=1.0.0",
+  "scikit-learn>=1.3.0",
+  "joblib>=1.3.0",
+  "fastapi>=0.110.0",
+  "uvicorn>=0.27.0",
+]
+
+[project.scripts]
+cap-predictor = "cap_predictor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+  "slow: optional slow tests that touch full PDFs",
+]
