@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import base64
+import io
+import zipfile
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 from cap_predictor.models import StudentProfile
 from cap_predictor.parser.normalizer import load_all_cutoffs
@@ -15,6 +19,7 @@ from cap_predictor.report.csv_export import filter_predictions, result_to_csv_st
 from cap_predictor.utils.band_legend import BAND_MEANINGS
 from cap_predictor.utils.branch_catalog import (
     ALL_UI_LABEL,
+    encode_target_branches,
     load_branch_names,
     load_university_names,
     merge_category_options,
@@ -40,7 +45,7 @@ with st.expander("What Safe / Target / Dream mean", expanded=True):
         "Margin = **student percentile - closing percentile**. "
         "These bands are historical comparisons, not admission guarantees."
     )
-    st.dataframe(BAND_MEANINGS, use_container_width=True, hide_index=True)
+    st.dataframe(BAND_MEANINGS, width="stretch", hide_index=True)
     st.markdown(
         "**Evidence confidence:** `high` = multi-year, `medium` = multi-round same year, "
         "`low` = single year+round point."
@@ -165,17 +170,25 @@ with tab_predict:
                 q = branch_filter.strip().lower()
                 filtered_branches = [b for b in branch_options if q in b.lower()] or branch_options
             branch_choices = with_all_option(filtered_branches)
-            # Keep default branch if still in filtered list
-            bi = (
-                branch_choices.index(default_branch)
-                if default_branch in branch_choices
-                else (1 if len(branch_choices) > 1 else 0)
+            default_includes = (
+                [default_branch]
+                if default_branch in filtered_branches
+                else ([filtered_branches[0]] if filtered_branches else [])
             )
-            branch = st.selectbox(
-                "Target Branch",
+            branch_selected = st.multiselect(
+                "Target Branch (include)",
                 branch_choices if branch_choices else [ALL_UI_LABEL, "Computer Engineering"],
-                index=bi,
-                help="All branch names from cutoff PDFs. (All) includes every branch.",
+                default=default_includes,
+                help=(
+                    "Select one or more branches. Include (All) alone to search every branch. "
+                    "Exact catalog names only (no Civil↔Computer fuzzy)."
+                ),
+            )
+            exclude_selected = st.multiselect(
+                "Exclude branches (optional)",
+                filtered_branches if filtered_branches else branch_options,
+                default=[],
+                help="Optional: remove these exact branch names from results after include.",
             )
             round_label = st.selectbox(
                 "CAP Round",
@@ -190,9 +203,10 @@ with tab_predict:
             max_preferences = st.number_input(
                 "Max preference list length",
                 min_value=5,
-                max_value=100,
+                max_value=500,
                 value=30,
                 step=5,
+                help="How many Safe→Target→Dream options to keep in the preference list (up to 500).",
             )
 
         with st.expander("Advanced options"):
@@ -205,8 +219,8 @@ with tab_predict:
         submitted = st.form_submit_button("Generate report", type="primary")
 
     if submitted:
-        if not str(branch).strip():
-            st.error("Please select Target Branch.")
+        if not branch_selected:
+            st.error("Please select at least one Target Branch (or (All)).")
             st.stop()
         if not str(home_university).strip():
             st.error("Please enter Home University.")
@@ -220,15 +234,26 @@ with tab_predict:
             dream_below=float(dream_below),
         )
 
+        # Drop excludes that are also in include (except when include is All)
+        include_encoded = encode_target_branches(list(branch_selected))
+        excl = [
+            e
+            for e in exclude_selected
+            if e.strip()
+            and e not in branch_selected
+            and e != ALL_UI_LABEL
+        ]
+
         profile = StudentProfile(
             percentile=float(percentile),
             category=ui_value_to_profile(str(category)),
             gender=ui_value_to_profile(str(gender)),
             home_university=ui_value_to_profile(str(home_university)),
             seat_type=seat_type,
-            target_branch=ui_value_to_profile(str(branch)),
+            target_branch=include_encoded,
             year=year_val,
             round=round_val,
+            exclude_branches=excl,
         )
 
         st.warning(
@@ -270,6 +295,7 @@ with tab_predict:
                 f"- **Home University:** {profile.home_university}  \n"
                 f"- **Seat Type:** {profile.seat_type}  \n"
                 f"- **Branch:** {profile.target_branch}  \n"
+                f"- **Exclude branches:** {', '.join(profile.exclude_branches) if profile.exclude_branches else '(none)'}  \n"
                 f"- **Year / Round:** {profile.year or 'All'} / {profile.round or 'All'}"
             )
             if result.notes:
@@ -279,6 +305,25 @@ with tab_predict:
             prefs_branches = sorted({c.branch_name for c in result.preference_order})
             if prefs_branches:
                 st.caption("Branches in preference list: " + ", ".join(prefs_branches[:12]))
+
+        rule_notes = [
+            n
+            for n in (result.notes or [])
+            if n.lower().startswith("eligibility")
+            or "seat type" in n.lower()
+            or "jurisdiction" in n.lower()
+            or n.lower().startswith("cap process")
+            or "information brochure" in n.lower()
+            or "condensed from the official" in n.lower()
+        ]
+        if rule_notes:
+            with st.expander("Official rule notes (CET Information Brochure)", expanded=False):
+                st.caption(
+                    "Condensed from the brochure for counselling. "
+                    "Cutoffs still drive bands; seat matrix still drives seats."
+                )
+                for n in rule_notes:
+                    st.markdown(f"- {n}")
 
         st.subheader("Filter preference list")
         fc1, fc2, fc3 = st.columns(3)
@@ -325,9 +370,9 @@ with tab_predict:
                 "hu_score": round(c.hu_match_score or 0, 1),
                 "category": c.primary_category_code,
             }
-            for i, c in enumerate(filtered[:40], start=1)
+            for i, c in enumerate(filtered, start=1)
         ]
-        st.dataframe(prefs, use_container_width=True)
+        st.dataframe(prefs, width="stretch")
 
         st.subheader("Closing trend (top 5 filtered)")
         for c in filtered[:5]:
@@ -363,6 +408,7 @@ with tab_predict:
                 data=Path(html_path).read_bytes(),
                 file_name=html_path.name,
                 mime="text/html",
+                key="dl_html",
             )
         with d2:
             st.download_button(
@@ -370,6 +416,7 @@ with tab_predict:
                 data=result_to_csv_string(result),
                 file_name=(csv_path.name if csv_path else "cap_report.csv"),
                 mime="text/csv",
+                key="dl_csv",
             )
         with d3:
             if excel_path and Path(excel_path).exists():
@@ -378,6 +425,7 @@ with tab_predict:
                     data=Path(excel_path).read_bytes(),
                     file_name=Path(excel_path).name,
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="dl_xlsx",
                 )
         with d4:
             if pdf_path and Path(pdf_path).exists():
@@ -386,7 +434,44 @@ with tab_predict:
                     data=Path(pdf_path).read_bytes(),
                     file_name=Path(pdf_path).name,
                     mime="application/pdf",
+                    key="dl_pdf",
                 )
+
+        # Bundle + auto-trigger download (browser)
+        zip_buf = io.BytesIO()
+        with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.writestr(html_path.name, Path(html_path).read_bytes())
+            zf.writestr(
+                csv_path.name if csv_path else "cap_report.csv",
+                result_to_csv_string(result).encode("utf-8"),
+            )
+            if excel_path and Path(excel_path).exists():
+                zf.writestr(Path(excel_path).name, Path(excel_path).read_bytes())
+            if pdf_path and Path(pdf_path).exists():
+                zf.writestr(Path(pdf_path).name, Path(pdf_path).read_bytes())
+        zip_bytes = zip_buf.getvalue()
+        zip_name = html_path.stem + "_bundle.zip"
+        st.download_button(
+            "Download all (ZIP)",
+            data=zip_bytes,
+            file_name=zip_name,
+            mime="application/zip",
+            type="primary",
+            key="dl_zip",
+        )
+        b64 = base64.b64encode(zip_bytes).decode("ascii")
+        components.html(
+            f"""
+            <a id="cap-auto-dl" href="data:application/zip;base64,{b64}" download="{zip_name}"></a>
+            <script>
+              const a = document.getElementById("cap-auto-dl");
+              if (a) {{ a.click(); }}
+            </script>
+            """,
+            height=0,
+        )
+        st.caption("A ZIP of the report files should download automatically. Use the buttons above if it was blocked.")
+
         saved = [str(html_path)]
         if csv_path:
             saved.append(str(csv_path))
@@ -446,11 +531,18 @@ with tab_whatif:
                 key="w_year",
             )
         with shared2:
-            branch_w = st.selectbox(
+            branch_w = st.multiselect(
                 "Target Branch (both)",
                 branch_ui if branch_ui else [ALL_UI_LABEL, "Computer Engineering"],
-                index=branch_index if branch_ui else 0,
+                default=[default_branch] if default_branch in (branch_ui or []) else [],
                 key="w_branch",
+                help="Multi-select include list for both profiles.",
+            )
+            exclude_w = st.multiselect(
+                "Exclude branches (optional, both)",
+                branch_options,
+                default=[],
+                key="w_excl",
             )
             round_w = st.selectbox(
                 "CAP Round (both)",
@@ -458,14 +550,19 @@ with tab_whatif:
                 index=0,
                 key="w_round",
             )
-            max_pref_w = st.number_input("Max preferences", 5, 50, 15, 5, key="w_max")
+            max_pref_w = st.number_input("Max preferences", 5, 500, 30, 5, key="w_max")
 
         compare = st.form_submit_button("Compare profiles", type="primary")
 
     if compare:
+        if not branch_w:
+            st.error("Select at least one Target Branch for What-if.")
+            st.stop()
         year_val = None if year_w == "All" else int(year_w)
         round_val = None if round_w == "All" else int(round_w)
         df = _cached_cutoffs(force_reparse_sidebar)
+        branch_encoded = encode_target_branches(list(branch_w))
+        excl_w = [e for e in exclude_w if e not in branch_w and e != ALL_UI_LABEL]
         results = []
         for label, pct, cat, gen in [
             ("A", pct_a, cat_a, gender_a),
@@ -477,9 +574,10 @@ with tab_whatif:
                 gender=ui_value_to_profile(str(gen)),
                 home_university=ui_value_to_profile(str(hu_shared)),
                 seat_type=seat_shared,
-                target_branch=ui_value_to_profile(str(branch_w)),
+                target_branch=branch_encoded,
                 year=year_val,
                 round=round_val,
+                exclude_branches=excl_w,
             )
             result, *_ = run_prediction_report(
                 profile,
@@ -512,6 +610,6 @@ with tab_whatif:
                     }
                     for i, c in enumerate(result.preference_order[: int(max_pref_w)], start=1)
                 ]
-                st.dataframe(rows, use_container_width=True, hide_index=True)
+                st.dataframe(rows, width="stretch", hide_index=True)
     else:
         st.info("Set Profile A and B, then click **Compare profiles**.")

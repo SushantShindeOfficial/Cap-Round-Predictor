@@ -1,4 +1,4 @@
-"""Basic eligibility notes for special CAP seat types."""
+"""Basic eligibility notes for special CAP seat types (brochure-backed when available)."""
 
 from __future__ import annotations
 
@@ -7,10 +7,20 @@ from cap_predictor.models import StudentProfile
 
 def eligibility_notes(profile: StudentProfile) -> list[str]:
     """
-    Soft counselling warnings for TFWS / PWD / DEF / ORPHAN seat codes.
+    Soft counselling warnings for TFWS / PWD / DEF / ORPHAN / EWS / seat type / HU.
 
-    These do not hard-block predictions; they remind users to verify certificates.
+    Prefer CET Information Brochure structured rules; fall back to generic reminders.
+    These do not hard-block predictions.
     """
+    try:
+        from cap_predictor.data.rulebook_store import structured_eligibility_notes
+
+        brochure = structured_eligibility_notes(profile)
+        if brochure:
+            return brochure
+    except Exception:  # noqa: BLE001
+        pass
+
     code = profile.category.strip().upper()
     notes: list[str] = []
 

@@ -1,0 +1,84 @@
+{
+  "source": "Information Brochure for Admission to Under Graduate and Post Graduate Technical Courses (2026-27)",
+  "academic_year": "2026-27",
+  "definitions": {
+    "HU": "Home University area — seats for Maharashtra State candidates whose Home University matches the institute's university jurisdiction (brochure rule 2 / CAP allotment).",
+    "OHU": "Outside Home University (OHU) — seats for Maharashtra State candidates whose Home University is other than the institute's university area.",
+    "STATE": "State Level seats — filled statewide among eligible Maharashtra State candidates (not limited to a single Home University tag), as allotted in CAP."
+  },
+  "university_jurisdiction": [
+    {
+      "university": "Dr. Babasaheb Ambedkar Marathwada University",
+      "districts": ["Chhatrapati Sambhajinagar", "Beed", "Jalna", "Dharashiv"]
+    },
+    {
+      "university": "Swami Ramanand Teerth Marathwada University, Nanded",
+      "districts": ["Hingoli", "Latur", "Nanded", "Parbhani"]
+    },
+    {
+      "university": "Mumbai University",
+      "districts": ["Mumbai City", "Mumbai Suburban", "Ratnagiri", "Raigad", "Palghar", "Sindhudurg", "Thane"]
+    },
+    {
+      "university": "Kavayitri Bahinabai Chaudhari North Maharashtra University",
+      "districts": ["Dhule", "Jalgaon", "Nandurbar"]
+    },
+    {
+      "university": "Savitribai Phule Pune University",
+      "districts": ["Ahmednagar", "Nashik", "Pune"]
+    },
+    {
+      "university": "Shivaji University",
+      "districts": ["Kolhapur", "Sangli", "Satara"]
+    },
+    {
+      "university": "Punyashlok Ahilyabai Holkar Solapur University",
+      "districts": ["Solapur"]
+    },
+    {
+      "university": "Sant Gadge Baba Amravati University",
+      "districts": ["Akola", "Amravati", "Buldana", "Washim", "Yavatmal"]
+    },
+    {
+      "university": "Rashtrasant Tukadoji Maharaj Nagpur University",
+      "districts": ["Bhandara", "Gondia", "Nagpur", "Wardha"]
+    },
+    {
+      "university": "Gondwana University",
+      "districts": ["Chandrapur", "Gadchiroli"]
+    }
+  ],
+  "eligibility": {
+    "TFWS": {
+      "summary": "Tuition Fee Waiver Scheme seats are supernumerary (up to 5% of sanctioned intake where eligible). Only Maharashtra State Candidature candidates whose parent's annual income from all sources is less than Rs. 8 Lakh are eligible. Income certificate from competent Maharashtra authority required. Course/institution change not allowed after TFWS admission.",
+      "keywords": ["TFWS", "Tuition Fee Waiver", "8 Lakh", "income"]
+    },
+    "EWS": {
+      "summary": "10% seats reserved for Economically Weaker Section (EWS) candidates (Maharashtra State), over and above sanctioned intake, filled through CAP as per Government policy. Valid EWS certificate required.",
+      "keywords": ["EWS", "Economically Weaker"]
+    },
+    "PWD": {
+      "summary": "Persons with Disability seats: disability must be permanent and not less than 40%. Certificate from competent authority required. Available for Maharashtra domiciled candidates in HU / State Level seats. Single inter-se merit list of eligible PWD candidates.",
+      "keywords": ["PWD", "Disability", "40%", "Persons with Disability"]
+    },
+    "DEF": {
+      "summary": "Defence category seats require qualifying defence-category documents as specified in the brochure (Proformas). Verify current-year CAP document list before preferring DEF codes.",
+      "keywords": ["Defence", "DEF", "Ex-Servicemen"]
+    },
+    "ORPHAN": {
+      "summary": "One percent (1%) of CAP seats (excluding Minority institutions and All India seats, if any) reserved for Orphan Candidates, filled through CAP as per Women and Child Welfare Department GR.",
+      "keywords": ["Orphan", "ORPHAN"]
+    },
+    "MI": {
+      "summary": "Minority Quota seats are for Maharashtra-domiciled linguistic or religious minority candidates as notified by the Government. Minority declaration / leaving certificate and domicile (or Type A docs) required.",
+      "keywords": ["Minority", "MI", "linguistic", "religious"]
+    }
+  },
+  "cap_process_summary": [
+    "CAP allotment for Maharashtra State candidates uses Inter-Se-Merit, filled options, and seats available at each stage of Rounds I–IV.",
+    "Home University (HU), Other than Home University (OHU), and State Level seats are allotted with HU/OHU tags; if seats remain vacant, stages may run without HU/OHU tags.",
+    "Candidates eligible for a stage are considered even if allotted or not allotted in a previous stage; upward shift is possible as seats open.",
+    "Cutoff percentiles in this app are historical evidence only — actual allotment follows CET Cell merit lists and the brochure stages, not these band labels."
+  ],
+  "disclaimer": "Rule notes are condensed from the official CET Information Brochure 2026-27 for counselling guidance. Always verify the latest CET Cell notifications and your documents."
+}

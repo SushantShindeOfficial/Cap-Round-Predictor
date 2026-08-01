@@ -85,14 +85,13 @@ def _filter_year_round(df: pd.DataFrame, profile: StudentProfile) -> pd.DataFram
     return out
 
 
-def _filter_branch(
+def _filter_branch_one(
     df: pd.DataFrame,
     target_branch: str,
     score_cutoff: int = 85,
 ) -> pd.DataFrame:
+    """Filter to a single branch query (exact catalog / code / fuzzy)."""
     if df.empty:
-        return df
-    if is_all_selection(target_branch):
         return df
     target = target_branch.strip()
     if target.isdigit() or (target.isalnum() and len(target) >= 6 and any(ch.isdigit() for ch in target)):
@@ -101,7 +100,6 @@ def _filter_branch(
             return by_code
 
     names = load_branch_names(df)
-    # Streamlit / exact catalog names: equality only
     exact_catalog = any(n.lower() == target.lower() for n in names)
     matched = match_branch_names(
         target,
@@ -112,6 +110,52 @@ def _filter_branch(
     if not matched:
         return df.iloc[0:0]
     return df[df["branch_name"].isin(matched)]
+
+
+def _filter_branch(
+    df: pd.DataFrame,
+    target_branch: str,
+    score_cutoff: int = 85,
+    *,
+    exclude_branches: list[str] | None = None,
+) -> pd.DataFrame:
+    from cap_predictor.utils.branch_catalog import decode_target_branches
+
+    if df.empty:
+        return df
+    includes = decode_target_branches(target_branch)
+    if includes is None:
+        out = df
+    elif len(includes) == 1:
+        out = _filter_branch_one(df, includes[0], score_cutoff=score_cutoff)
+    else:
+        frames = [
+            _filter_branch_one(df, inc, score_cutoff=score_cutoff) for inc in includes
+        ]
+        frames = [f for f in frames if not f.empty]
+        out = pd.concat(frames, ignore_index=True) if frames else df.iloc[0:0]
+        if not out.empty:
+            out = out.drop_duplicates(
+                subset=[
+                    c
+                    for c in (
+                        "institute_code",
+                        "branch_code",
+                        "year",
+                        "round",
+                        "category_code",
+                        "seat_type_section",
+                        "closing_percentile",
+                    )
+                    if c in out.columns
+                ]
+            )
+
+    if exclude_branches and not out.empty and "branch_name" in out.columns:
+        excl = {e.strip().lower() for e in exclude_branches if e and str(e).strip()}
+        if excl:
+            out = out[~out["branch_name"].astype(str).str.strip().str.lower().isin(excl)]
+    return out
 
 
 def _seat_section_filter(df: pd.DataFrame, seat_type: str) -> pd.DataFrame:
@@ -227,7 +271,11 @@ class RuleBasedPredictor:
                 f"Applied filters: year={profile.year or 'All'}, round={profile.round or 'All'}."
             )
 
-        branch_df = _filter_branch(filtered, profile.target_branch)
+        branch_df = _filter_branch(
+            filtered,
+            profile.target_branch,
+            exclude_branches=list(profile.exclude_branches or []),
+        )
         if branch_df.empty:
             notes.append(
                 f"No branches matched '{profile.target_branch}'. "
@@ -240,6 +288,12 @@ class RuleBasedPredictor:
             )
         if is_all_selection(profile.target_branch):
             notes.append("Branch filter: All (no branch restriction).")
+        elif " || " in profile.target_branch:
+            notes.append(f"Branch include (multi): {profile.target_branch}.")
+        if profile.exclude_branches:
+            notes.append(
+                "Branch exclude: " + ", ".join(profile.exclude_branches) + "."
+            )
         if is_all_selection(profile.home_university):
             notes.append("Home University: All (no HU affiliation preference).")
         if is_all_selection(profile.gender) and not is_all_selection(profile.category):

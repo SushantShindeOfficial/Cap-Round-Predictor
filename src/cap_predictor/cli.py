@@ -147,6 +147,25 @@ def cmd_parse_seat_matrix(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_parse_rulebook(args: argparse.Namespace) -> int:
+    from cap_predictor.parser.rulebook_parser import parse_and_cache_rulebook
+    from cap_predictor.utils.paths import default_rulebook_pdf_paths
+
+    paths = [Path(p) for p in args.pdf] if getattr(args, "pdf", None) else default_rulebook_pdf_paths()
+    if not paths:
+        print("No rulebook PDFs found under Knowledge Base/rulebook/")
+        return 1
+    chunks = parse_and_cache_rulebook(
+        paths,
+        force=bool(getattr(args, "force_reparse", False)),
+        max_pages=getattr(args, "max_pages", None),
+    )
+    print(f"Indexed {len(chunks)} rulebook page chunks from {len(paths)} PDF(s).")
+    for p in paths:
+        print(f"  {p.name}")
+    return 0
+
+
 def cmd_build_db(args: argparse.Namespace) -> int:
     from cap_predictor.data.duckdb_store import duckdb_path, sync_cutoffs_to_duckdb
 
@@ -374,6 +393,20 @@ def build_parser() -> argparse.ArgumentParser:
     p_sm.add_argument("--force-reparse", action="store_true")
     p_sm.add_argument("--max-pages", type=int, default=None, help="Limit pages per PDF (smoke)")
     p_sm.set_defaults(func=cmd_parse_seat_matrix)
+
+    p_rb = sub.add_parser(
+        "parse-rulebook",
+        help="Index CET Information Brochure into searchable chunks for counselling",
+    )
+    p_rb.add_argument("--log-level", default="INFO")
+    p_rb.add_argument(
+        "--pdf",
+        nargs="*",
+        help="Rulebook PDF paths (default: Knowledge Base/rulebook/)",
+    )
+    p_rb.add_argument("--force-reparse", action="store_true")
+    p_rb.add_argument("--max-pages", type=int, default=None, help="Limit pages (smoke)")
+    p_rb.set_defaults(func=cmd_parse_rulebook)
 
     p_branches = sub.add_parser("list-branches", help="List distinct branch names from cache")
     p_branches.add_argument("--log-level", default="INFO")

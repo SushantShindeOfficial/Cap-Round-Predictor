@@ -3,6 +3,9 @@
 import pandas as pd
 
 from cap_predictor.utils.branch_catalog import (
+    ALL_UI_LABEL,
+    decode_target_branches,
+    encode_target_branches,
     is_all_selection,
     load_category_codes,
     load_university_names,
@@ -80,3 +83,14 @@ def test_merge_category_options_pdf_first():
     assert any(c in CAP_CATEGORY_SEATS for c in cats)
     assert "Mumbai University" in load_university_names(cutoffs)
     assert "ZZZPDFONLY" in load_category_codes(cutoffs)
+
+
+def test_encode_decode_multi_branches():
+    assert encode_target_branches([]) == "ALL"
+    assert encode_target_branches([ALL_UI_LABEL]) == "ALL"
+    assert encode_target_branches(["Computer Engineering"]) == "Computer Engineering"
+    enc = encode_target_branches(["Computer Engineering", "Information Technology"])
+    assert " || " in enc
+    assert decode_target_branches(enc) == ["Computer Engineering", "Information Technology"]
+    assert decode_target_branches("ALL") is None
+    assert is_all_selection(encode_target_branches([ALL_UI_LABEL, "Civil Engineering"]))

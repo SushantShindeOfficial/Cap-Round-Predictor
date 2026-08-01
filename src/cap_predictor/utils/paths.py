@@ -41,6 +41,10 @@ def seat_matrix_dir() -> Path:
     return knowledge_base_dir() / "Seat Matrix"
 
 
+def rulebook_dir() -> Path:
+    return knowledge_base_dir() / "rulebook"
+
+
 def default_pdf_paths() -> list[Path]:
     kb = knowledge_base_dir()
     paths = {
@@ -59,5 +63,18 @@ def default_seat_matrix_pdf_paths() -> list[Path]:
         *sm.glob("*SeatMatrix*.pdf"),
         *sm.glob("*Seat*Matrix*.pdf"),
         *sm.glob("*seat*matrix*.pdf"),
+        *sm.glob("seat-matrix-*.pdf"),
+    }
+    return sorted(p for p in paths if p.is_file())
+
+
+def default_rulebook_pdf_paths() -> list[Path]:
+    rb = rulebook_dir()
+    if not rb.is_dir():
+        return []
+    paths = {
+        *rb.glob("*Information*Brochure*.pdf"),
+        *rb.glob("*Brochure*.pdf"),
+        *rb.glob("*.pdf"),
     }
     return sorted(p for p in paths if p.is_file())

@@ -99,6 +99,9 @@
         <div class="kv"><span>Home University</span>{{ profile.home_university }}</div>
         <div class="kv"><span>Seat Type</span>{{ profile.seat_type }}</div>
         <div class="kv"><span>Target Branch</span>{{ profile.target_branch }}</div>
+        {% if profile.exclude_branches %}
+        <div class="kv"><span>Exclude Branches</span>{{ profile.exclude_branches | join(', ') }}</div>
+        {% endif %}
         <div class="kv"><span>Year filter</span>{{ profile.year if profile.year is not none else 'All' }}</div>
         <div class="kv"><span>Round filter</span>{{ profile.round if profile.round is not none else 'All' }}</div>
       </div>
@@ -317,7 +320,7 @@
       {% else %}
       <p class="notes">No seat summary.</p>
       {% endif %}
-      <p class="notes">Cutoff bands drive predictions. Seat counts (when shown) come from the CAP Round I seat matrix PDF for the matched institute/branch/quota cell — not invented by the LLM.</p>
+      <p class="notes">Cutoff bands drive predictions. Seat counts (when shown) come from the CAP Round I seat matrix PDF for the matched institute/branch/quota cell — not invented by the LLM. Eligibility and CAP process notes (when shown) are condensed from the CET Information Brochure and do not change band math.</p>
     </section>
 
     <section>

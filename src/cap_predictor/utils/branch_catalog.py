@@ -30,16 +30,48 @@ def is_all_selection(value: str | None) -> bool:
     """True when the user chose All / (All) / * for a catalog field."""
     if value is None:
         return False
-    text = str(value).strip().lower()
-    return text in {
-        "all",
-        "(all)",
-        "*",
-        "any",
-        "all universities",
-        "all branches",
-        "all categories",
-    }
+    text = value.strip().upper()
+    return text in {"ALL", "(ALL)", "*", "ANY"}
+
+
+BRANCH_MULTI_SEP = " || "
+
+
+def encode_target_branches(selected: list[str]) -> str:
+    """
+    Encode UI multi-select into StudentProfile.target_branch.
+
+    Empty or containing (All)/ALL → ALL. Otherwise join with ' || '.
+    """
+    cleaned = [s.strip() for s in selected if s and str(s).strip()]
+    if not cleaned:
+        return ALL_SENTINEL
+    if any(is_all_selection(s) or s == ALL_UI_LABEL for s in cleaned):
+        return ALL_SENTINEL
+    # Dedupe preserve order
+    seen: set[str] = set()
+    out: list[str] = []
+    for s in cleaned:
+        key = s.lower()
+        if key not in seen:
+            seen.add(key)
+            out.append(s)
+    return BRANCH_MULTI_SEP.join(out) if len(out) > 1 else out[0]
+
+
+def decode_target_branches(target_branch: str) -> list[str] | None:
+    """
+    Decode profile target_branch into include list.
+
+    Returns None when ALL (no include filter).
+    """
+    if is_all_selection(target_branch):
+        return None
+    raw = target_branch.strip()
+    if BRANCH_MULTI_SEP in raw:
+        parts = [p.strip() for p in raw.split(BRANCH_MULTI_SEP) if p.strip()]
+        return parts or None
+    return [raw] if raw else None
 
 
 def with_all_option(options: list[str], *, label: str = ALL_UI_LABEL) -> list[str]:

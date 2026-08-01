@@ -27,6 +27,13 @@ UNIVERSITY_ALIASES: dict[str, str] = {
     "su": "shivaji university",
     "shivaji univ": "shivaji university",
     "bautu": "dr babasaheb ambedkar technological university",
+    "bamu": "dr babasaheb ambedkar marathwada university",
+    "dr babasaheb ambedkar marathwada university": "dr babasaheb ambedkar marathwada university",
+    "kbc nmu": "kavayitri bahinabai chaudhari north maharashtra university",
+    "north maharashtra university": "kavayitri bahinabai chaudhari north maharashtra university",
+    "solapur university": "punyashlok ahilyabai holkar solapur university",
+    "pahsu": "punyashlok ahilyabai holkar solapur university",
+    "gondwana university": "gondwana university",
     "autonomous institute": "autonomous institute",
     "autonomous": "autonomous institute",
 }

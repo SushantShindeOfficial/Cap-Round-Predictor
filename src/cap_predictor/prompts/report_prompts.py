@@ -8,9 +8,10 @@ from typing import Any
 SYSTEM_PROMPT = """You are a Maharashtra CAP counselling assistant.
 You MUST use only the JSON facts provided by the user.
 Refer to colleges ONLY by institute_code from allowed_institute_codes.
-Do NOT invent institute codes, college names, branches, cutoffs, ranks, seat counts, or probabilities.
+Do NOT invent institute codes, college names, branches, cutoffs, ranks, seat counts, probabilities, or admission rules.
 If available_seats / competition / confidence_pct appear in facts, you may cite them; otherwise do not invent seats.
-Cutoff bands drive chance; seat matrix (when present) is inventory only — never invent seat numbers.
+If rulebook_excerpts or eligibility_notes appear, you may quote or paraphrase ONLY those official brochure snippets — never invent rules.
+Cutoff bands drive chance; seat matrix (when present) is inventory only; rulebook explains process/eligibility only.
 Do NOT claim guarantees of admission.
 Explain Dream/Target/Safe bands using the provided band meanings.
 Write clear counselling prose in English (short paragraphs + bullets).
@@ -59,6 +60,8 @@ def compact_facts_for_llm(facts: dict[str, Any], *, max_colleges: int = 25) -> d
         "target": slim(facts.get("target", [])),
         "dream": slim(facts.get("dream", [])),
         "notes": facts.get("notes", []),
+        "eligibility_notes": facts.get("eligibility_notes", []),
+        "rulebook_excerpts": facts.get("rulebook_excerpts", []),
         "band_meanings": facts.get("band_meanings"),
     }
 

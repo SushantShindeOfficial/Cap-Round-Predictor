@@ -46,7 +46,7 @@ Cached parquet files land in `data/processed/`.
 
 ### Seat matrix (inventory overlay)
 
-Place CAP Round I seat-matrix PDFs under `Knowledge Base/Seat Matrix/` (e.g. `2024SeatMatrix.pdf`, `2025SeatMatrix.pdf`). Parse once:
+Place CAP Round I seat-matrix PDFs under `Knowledge Base/Seat Matrix/` (e.g. `2024SeatMatrix.pdf`, `2025SeatMatrix.pdf`, `seat-matrix-2026.pdf`). Parse once:
 
 ```powershell
 python -m cap_predictor.cli parse-seat-matrix
@@ -57,7 +57,16 @@ python -m cap_predictor.cli parse-seat-matrix
 This writes `data/processed/seat_matrix_*.parquet` (SHA256-validated cache), `seat_matrix_all.parquet`, and seeds `data/masters/college_master.csv`.
 
 **Cutoffs drive Dream/Target/Safe bands.** Seat matrix attaches `available_seats`, competition, confidence %, and a weighted `final_score` for preference ranking. Options with **0 seats** for the mapped cell are excluded from the preference list. The LLM may cite seat fields from facts only — it must not invent seat counts.
-## Predict from user inputs
+
+### CET Information Brochure (rules overlay)
+
+Place the official brochure under `Knowledge Base/rulebook/` (e.g. `Information_Brochure_UG_&_PG_2026-27.pdf`). Structured rules live in `data/masters/cap_rules_2026.json`. Index searchable pages:
+
+```powershell
+python -m cap_predictor.cli parse-rulebook
+```
+
+Brochure text powers **eligibility / HU / CAP process notes** and optional LLM excerpts. It does **not** change cutoff band math or seat counts.## Predict from user inputs
 
 The report is driven by these student fields:
 

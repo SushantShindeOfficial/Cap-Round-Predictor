@@ -36,6 +36,7 @@ data/processed/*.duckdb.wal
 data/processed/models/
 data/processed/*.meta.json
 data/processed/parser_validation.json
+data/processed/rulebook_chunks.json
 
 # Large CAP PDFs (keep locally under Knowledge Base/; not for GitHub)
 Knowledge Base/**/*.pdf

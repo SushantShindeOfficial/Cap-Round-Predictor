@@ -51,6 +51,8 @@ class StudentProfile(BaseModel):
     target_branch: str
     year: int | None = None
     round: int | None = Field(default=None, ge=1, le=4)
+    # Optional exact branch names to drop after include filter (UI multi-select)
+    exclude_branches: list[str] = Field(default_factory=list)
 
     @field_validator("gender")
     @classmethod
@@ -64,7 +66,7 @@ class StudentProfile(BaseModel):
             return "F"
         return g
 
-    @field_validator("category", "seat_type", "target_branch", "home_university")
+    @field_validator("category", "seat_type", "home_university")
     @classmethod
     def strip_text(cls, v: str) -> str:
         text = v.strip()
@@ -72,6 +74,37 @@ class StudentProfile(BaseModel):
         if upper in {"ALL", "(ALL)", "*", "ANY"}:
             return "ALL"
         return text
+
+    @field_validator("target_branch")
+    @classmethod
+    def strip_target_branch(cls, v: str) -> str:
+        text = v.strip()
+        # Multi-branch encoding uses " || " — only treat whole value as ALL
+        upper = text.upper()
+        if upper in {"ALL", "(ALL)", "*", "ANY"}:
+            return "ALL"
+        return text
+
+    @field_validator("exclude_branches", mode="before")
+    @classmethod
+    def clean_exclude(cls, v: object) -> list[str]:
+        if v is None:
+            return []
+        if isinstance(v, str):
+            items = [v]
+        else:
+            items = list(v)  # type: ignore[arg-type]
+        out: list[str] = []
+        seen: set[str] = set()
+        for item in items:
+            name = str(item).strip()
+            if not name or name.upper() in {"ALL", "(ALL)"}:
+                continue
+            key = name.lower()
+            if key not in seen:
+                seen.add(key)
+                out.append(name)
+        return out
 
 
 class ClosingTrendPoint(BaseModel):

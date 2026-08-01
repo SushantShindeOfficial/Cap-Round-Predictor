@@ -70,11 +70,18 @@ def template_narrative(result: PredictionResult) -> str:
         "- Verify home-university and category seat allotment rules before locking preferences.",
     ]
     if result.notes:
-        elig = [n for n in result.notes if n.lower().startswith("eligibility")]
+        elig = [
+            n
+            for n in result.notes
+            if n.lower().startswith("eligibility")
+            or "seat type" in n.lower()
+            or "jurisdiction" in n.lower()
+            or n.lower().startswith("cap process")
+        ]
         if elig:
             lines.append("")
-            lines.append("Eligibility notes:")
-            lines.extend(f"- {n}" for n in elig)
+            lines.append("Official rule notes (CET Information Brochure):")
+            lines.extend(f"- {n}" for n in elig[:6])
     if result.preference_order:
         lines.append("")
         lines.append("Suggested preference highlights (deterministic order):")
@@ -86,7 +93,17 @@ def template_narrative(result: PredictionResult) -> str:
                 f"confidence={c.evidence_confidence}]"
             )
     if result.notes:
-        other = [n for n in result.notes if not n.lower().startswith("eligibility")]
+        other = [
+            n
+            for n in result.notes
+            if not (
+                n.lower().startswith("eligibility")
+                or "seat type" in n.lower()
+                or "jurisdiction" in n.lower()
+                or n.lower().startswith("cap process")
+                or "condensed from the official" in n.lower()
+            )
+        ]
         if other:
             lines.append("")
             lines.append("Data notes: " + " ".join(other))
@@ -109,6 +126,17 @@ def generate_grounded_narrative(
 
     facts = compact_facts_for_llm(result.facts_dict())
     facts["band_meanings"] = BAND_MEANINGS
+    try:
+        from cap_predictor.data.rulebook_store import retrieve_rulebook_excerpts
+
+        excerpts = retrieve_rulebook_excerpts(result.profile, max_excerpts=4)
+        if excerpts:
+            facts["rulebook_excerpts"] = excerpts
+        elig = [n for n in (result.notes or []) if "Eligibility" in n or "Seat type" in n or "jurisdiction" in n.lower() or "CAP process" in n]
+        if elig:
+            facts["eligibility_notes"] = elig[:8]
+    except Exception as exc:  # noqa: BLE001
+        logger.debug("Rulebook excerpts skipped: %s", exc)
     prompt = build_user_prompt(facts)
     try:
         text = client.generate(prompt, system=SYSTEM_PROMPT)

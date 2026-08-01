@@ -311,3 +311,43 @@ def test_profile_normalizes_all_ui_label():
     assert profile.gender == "ALL"
     assert profile.home_university == "ALL"
     assert profile.target_branch == "ALL"
+
+
+def test_multi_branch_include_and_exclude():
+    df = _sample_df()
+    civil = df.iloc[0].copy()
+    civil["institute_code"] = 7777
+    civil["institute_name"] = "Civil College"
+    civil["branch_code"] = "777719110"
+    civil["branch_name"] = "Civil Engineering"
+    civil["category_code"] = "GOPENS"
+    civil["closing_percentile"] = 80.0
+    df = pd.concat([df, pd.DataFrame([civil])], ignore_index=True)
+
+    profile = StudentProfile(
+        percentile=92.0,
+        category="GOPENS",
+        gender="M",
+        home_university="ALL",
+        seat_type="ALL",
+        target_branch="Computer Engineering || Computer Science and Engineering || Civil Engineering",
+        exclude_branches=["Civil Engineering"],
+    )
+    result = RuleBasedPredictor(max_preferences=100).predict(profile, df)
+    names = {p.branch_name for p in result.preference_order + result.safe + result.target + result.dream}
+    assert "Civil Engineering" not in names
+    assert names  # some computer-ish options remain
+
+
+def test_max_preferences_honored():
+    df = _sample_df()
+    profile = StudentProfile(
+        percentile=92.0,
+        category="GOPENS",
+        gender="M",
+        home_university="ALL",
+        seat_type="ALL",
+        target_branch="ALL",
+    )
+    result = RuleBasedPredictor(max_preferences=2).predict(profile, df)
+    assert len(result.preference_order) <= 2
