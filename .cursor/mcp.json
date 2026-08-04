@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "cap-kb": {
+      "command": "${workspaceFolder}/.venv/Scripts/python.exe",
+      "args": ["-m", "cap_predictor.mcp_server"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "src"
+      }
+    }
+  }
+}

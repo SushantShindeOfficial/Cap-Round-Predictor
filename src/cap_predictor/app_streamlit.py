@@ -116,7 +116,7 @@ st.sidebar.caption(
     f"{len(branch_options)} branches, {len(category_options)} categories"
 )
 
-tab_predict, tab_whatif = st.tabs(["Predict", "What-if"])
+tab_predict, tab_whatif, tab_ask = st.tabs(["Predict", "What-if", "Ask"])
 
 with tab_predict:
     st.subheader("Student inputs")
@@ -613,3 +613,76 @@ with tab_whatif:
                 st.dataframe(rows, width="stretch", hide_index=True)
     else:
         st.info("Set Profile A and B, then click **Compare profiles**.")
+
+with tab_ask:
+    st.subheader("Ask the knowledge base")
+    st.caption(
+        "Questions are answered from parsed cutoffs, seat matrix, and the CET brochure — "
+        "not invented. Dream/Target/Safe bands still come from the Predict tab."
+    )
+    st.markdown(
+        "Examples: *colleges with closing % below 71*; "
+        "*merit rank between 40000 and 60000*; "
+        "*colleges with LNTD seats and their cutoffs*; "
+        "*what is HU vs OHU?*"
+    )
+    ask_llm = st.checkbox(
+        "Use Ollama to interpret the question",
+        value=True,
+        key="ask_use_llm",
+        help="If off or Ollama is down, keyword heuristics + table results are used.",
+    )
+    if "ask_history" not in st.session_state:
+        st.session_state.ask_history = []
+
+    for turn in st.session_state.ask_history:
+        with st.chat_message("user"):
+            st.write(turn["q"])
+        with st.chat_message("assistant"):
+            st.write(turn["a"])
+            if turn.get("tool"):
+                st.caption(f"Tool: `{turn['tool']}` args={turn.get('arguments')}")
+
+    with st.expander("Manual filters (no chat)", expanded=False):
+        with st.form("ask_manual_form"):
+            m1, m2, m3 = st.columns(3)
+            with m1:
+                man_max_pct = st.number_input("Max closing %", 0.0, 100.0, 71.0, 0.1)
+                man_cat = st.text_input("Category code", value="GOPENS")
+            with m2:
+                man_min_merit = st.number_input("Min merit", 0, 200000, 40000, 1000)
+                man_max_merit = st.number_input("Max merit", 0, 200000, 60000, 1000)
+            with m3:
+                man_year = st.number_input("Year (0=All)", 0, 2030, 0, 1)
+                man_limit = st.number_input("Limit", 5, 200, 50, 5)
+            use_merit = st.checkbox("Apply merit range", value=False)
+            run_manual = st.form_submit_button("Run cutoff query")
+        if run_manual:
+            from cap_predictor.kb.queries import query_cutoffs
+
+            payload = query_cutoffs(
+                max_closing_percentile=float(man_max_pct),
+                min_closing_merit=int(man_min_merit) if use_merit else None,
+                max_closing_merit=int(man_max_merit) if use_merit else None,
+                category_code=man_cat.strip() or None,
+                year=int(man_year) if man_year else None,
+                limit=int(man_limit),
+            )
+            st.write(payload.get("disclaimer"))
+            st.dataframe(payload.get("rows") or [], width="stretch")
+
+    prompt = st.chat_input("Ask about cutoffs, seats, or CAP rules…")
+    if prompt:
+        from cap_predictor.kb.ask import answer_question
+
+        with st.spinner("Searching knowledge base…"):
+            out = answer_question(prompt, use_llm=bool(ask_llm))
+        st.session_state.ask_history.append(
+            {
+                "q": prompt,
+                "a": out.get("answer"),
+                "tool": out.get("tool"),
+                "arguments": out.get("arguments"),
+            }
+        )
+        st.rerun()

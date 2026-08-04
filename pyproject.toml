@@ -25,10 +25,12 @@ dependencies = [
   "joblib>=1.3.0",
   "fastapi>=0.110.0",
   "uvicorn>=0.27.0",
+  "mcp>=1.0.0",
 ]
 
 [project.scripts]
 cap-predictor = "cap_predictor.cli:main"
+cap-kb-mcp = "cap_predictor.mcp_server:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

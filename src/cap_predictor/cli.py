@@ -167,12 +167,12 @@ def cmd_parse_rulebook(args: argparse.Namespace) -> int:
 
 
 def cmd_build_db(args: argparse.Namespace) -> int:
-    from cap_predictor.data.duckdb_store import duckdb_path, sync_cutoffs_to_duckdb
+    from cap_predictor.data.duckdb_store import duckdb_path, sync_knowledge_base_to_duckdb
 
-    df = load_all_cutoffs(force_reparse=args.force_reparse)
-    path = sync_cutoffs_to_duckdb(df)
-    print(f"DuckDB ready: {path} ({len(df)} rows)")
+    path = sync_knowledge_base_to_duckdb(force_reparse_cutoffs=args.force_reparse)
+    print(f"DuckDB ready: {path}")
     print(f"Default path: {duckdb_path()}")
+    print("Tables: cutoffs + seat_matrix (from seat_matrix_all.parquet when present)")
     return 0
 
 

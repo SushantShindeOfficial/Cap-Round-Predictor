@@ -66,7 +66,35 @@ Place the official brochure under `Knowledge Base/rulebook/` (e.g. `Information_
 python -m cap_predictor.cli parse-rulebook
 ```
 
-Brochure text powers **eligibility / HU / CAP process notes** and optional LLM excerpts. It does **not** change cutoff band math or seat counts.## Predict from user inputs
+Brochure text powers **eligibility / HU / CAP process notes** and optional LLM excerpts. It does **not** change cutoff band math or seat counts.
+
+### Knowledge Base chat (MCP + Ask tab)
+
+Sync DuckDB (cutoffs + seat matrix):
+
+```powershell
+python -m cap_predictor.cli build-db
+```
+
+**Streamlit:** open the **Ask** tab — chat questions against cutoffs / seats / brochure. Optional Ollama interprets the question; answers are grounded on tool results only.
+
+**Cursor MCP:** project config is [`.cursor/mcp.json`](.cursor/mcp.json). Restart Cursor MCP / reload window, then ask in chat e.g.:
+
+- colleges with closing percentile below 71
+- merit (selection rank) between 40000 and 60000
+- colleges with LNTD seats and their cutoffs
+- what is HU vs OHU (rulebook)
+
+Run the server manually if needed:
+
+```powershell
+$env:PYTHONPATH = "src"
+python -m cap_predictor.mcp_server
+```
+
+Numbers always come from DuckDB/parquet tools — the model must not invent institutes or cutoffs. Dream/Target/Safe bands still come from **Predict**.
+
+## Predict from user inputs
 
 The report is driven by these student fields:
 

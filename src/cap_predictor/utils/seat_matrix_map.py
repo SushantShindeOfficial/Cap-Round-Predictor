@@ -13,9 +13,13 @@ RESERVATION_TO_MATRIX: dict[str, str] = {
     "SC": "SC",
     "ST": "ST",
     "VJ": "VJDT",
+    "VJDT": "VJDT",
     "NT1": "NTB",
+    "NTB": "NTB",
     "NT2": "NTC",
+    "NTC": "NTC",
     "NT3": "NTD",
+    "NTD": "NTD",
     "OBC": "OBC",
     "SEBC": "SEBC",
     "EWS": "EWS",
@@ -69,7 +73,11 @@ def map_cutoff_category_to_seat_cell(category_code: str) -> SeatCellKey | None:
         quota = "HU"
     elif suffix == "O":
         quota = "OHU"
-    elif suffix == "S" or suffix is None:
+    elif suffix == "S":
+        quota = "STATE"
+    elif suffix is None:
+        # Codes like LNTD without H/O/S: do not assume STATE — leave as STATE
+        # for cutoff semantics, but seat queries should treat quota as optional.
         quota = "STATE"
     else:
         quota = "STATE"
